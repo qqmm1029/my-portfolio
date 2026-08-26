@@ -4,7 +4,7 @@ import Tag from "../components/Tag";
 const ExperiencePage = () => {
   return (
     <div className="cards">
-      <Card title="社团经历" emoji="🎭">
+      <Card title="社团经历" emoji="☆">
         <strong>setfree 街舞社 · 社团负责人</strong>（2023.9 - 至今）
         <br />
         <ul className="highlight-list">
@@ -15,7 +15,7 @@ const ExperiencePage = () => {
         </ul>
       </Card>
 
-      <Card title="获奖情况" emoji="🏆">
+      <Card title="获奖情况" emoji="☆">
         <ul className="highlight-list">
           <li>多次获校内单项奖学金</li>
           <li>易班创新技术大赛文创产品设计赛道二等奖</li>
@@ -24,7 +24,7 @@ const ExperiencePage = () => {
         </ul>
       </Card>
 
-      <Card title="教育背景" emoji="🎓">
+      <Card title="教育背景" emoji="☆">
         <strong>杭州电子科技大学</strong>（2023.9 - 至今）
         <br />
         网络空间安全（本科）· 大三

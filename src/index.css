@@ -1,41 +1,71 @@
+/* ============================================================
+   index.css - 全局样式与布局
+   功能：定义页面整体样式、背景、链接、响应式适配
+   ============================================================ */
+
+/* ============================================================
+   一、全局重置
+   作用：清除浏览器默认样式，统一盒模型
+   ============================================================ */
 * {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
+    margin: 0;                  /* 清除所有元素的外边距 */
+    padding: 0;                 /* 清除所有元素的内边距 */
+    box-sizing: border-box;     /* 盒模型：宽高包含 padding 和 border */
 }
 
+/* ============================================================
+   二、页面主体样式
+   ============================================================ */
 body {
-  font-family: "Microsoft YaHei", "PingFang SC", system-ui, -apple-system, sans-serif;
-  min-height: 100vh;
-  background-image: url("/2.jpg");
-  background-size: cover;
-  background-position: center;
-  background-attachment: fixed;
-  background-color: #F9F4EA;
-  background-blend-mode: overlay;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 20px;
+    /* ===== 字体设置 ===== */
+    font-family: "Microsoft YaHei", "PingFang SC", system-ui, -apple-system, sans-serif;
+    min-height: 100vh;          /* 至少占满整个视口高度 */
+
+    /* ===== 背景图片 ===== */
+    background-image: url("/2.jpg");      /* 背景图片路径（public/2.jpg） */
+    background-size: cover;              /* 背景图覆盖整个页面 */
+    background-position: center;         /* 背景图居中显示 */
+    background-attachment: fixed;        /* 背景固定（页面滚动时背景不动） */
+    background-color: #F9F4EA;          /* 背景色（图片加载时或透明时显示） */
+    background-blend-mode: overlay;      /* 混合模式：图片与颜色叠加产生柔和效果 */
+
+    /* ===== 居中布局 ===== */
+    display: flex;
+    align-items: center;         /* 垂直居中（子元素在纵轴居中） */
+    justify-content: center;     /* 水平居中（子元素在横轴居中） */
+
+    padding: 20px;               /* 页面四周边距，防止内容贴边 */
 }
 
+/* ============================================================
+   三、链接样式
+   ============================================================ */
 a {
-  color: #8D6C63;
-  text-decoration: none;
-  transition: color 0.2s;
+    color: #8D6C63;              /* 棕色（与主题色一致） */
+    text-decoration: none;       /* 去掉下划线 */
+    transition: color 0.2s;      /* 颜色变化过渡动画 0.2 秒 */
 }
 
+/* 链接悬停效果 */
 a:hover {
-  color: #CD96CD;
+    color: #CD96CD;              /* 悬停变为淡紫色 */
 }
 
+/* ============================================================
+   四、移动端适配（屏幕宽度 ≤ 768px）
+   ============================================================ */
 @media (max-width: 768px) {
-  body {
-    background-attachment: scroll;
-    background-size: cover;
-    background-position: center center;
-    padding: 4px;
-    min-height: 100vh;
-    height: auto;
-  }
+    body {
+        /* ===== 背景适配移动端 ===== */
+        background-attachment: scroll;     /* 背景跟随滚动（fixed 在移动端可能卡顿） */
+        background-size: cover;            /* 背景覆盖 */
+        background-position: center center; /* 背景居中 */
+
+        /* ===== 内边距调整 ===== */
+        padding: 4px;                      /* 缩小内边距，为内容留更多空间 */
+
+        /* ===== 高度调整 ===== */
+        min-height: 100vh;                 /* 最小高度 100vh */
+        height: auto;                      /* 高度自适应（内容多时自动增加） */
+    }
 }

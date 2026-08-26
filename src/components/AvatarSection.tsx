@@ -1,16 +1,44 @@
+// ============================================================
+// AvatarSection.tsx - 头像展示组件
+// 功能：显示圆形头像和底部文字说明
+// ============================================================
+
+// 导入 React（使用 JSX 需要）
+import React from "react";
+
+// ============================================================
+// 定义 Props 类型
+// ============================================================
 interface AvatarSectionProps {
-  caption: string;
+  caption: string;  // 头像下方的文字说明
 }
 
+// ============================================================
+// 主组件
+// ============================================================
 const AvatarSection = ({ caption }: AvatarSectionProps) => {
   return (
+    // 头像容器：控制整体布局（上下排列、居中对齐）
     <div className="avatar-section">
+      
+      {/* 头像外框：圆形边框 + 阴影效果 */}
       <div className="avatar-frame">
-        <div className="avatar-placeholder">HDU</div>
+        {/* 头像图片 */}
+        <img
+          src="/avatar.png"        // 图片路径（放在 public/avatar.png）
+          alt="个人头像"            // 图片加载失败时的替代文字
+        />
       </div>
-      <div className="avatar-caption">{caption}</div>
+
+      {/* 头像下方的文字说明 */}
+      <div className="avatar-caption">
+        {caption}  {/* 显示传入的文字，例如："前端开发者" */}
+      </div>
     </div>
   );
 };
 
+// ============================================================
+// 导出组件
+// ============================================================
 export default AvatarSection;

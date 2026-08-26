@@ -1,181 +1,253 @@
-import { useRef, useEffect, useCallback } from "react";
+// ============================================================
+// ImageModal.tsx - 全屏图片弹窗组件
+// 功能：全屏显示图片，支持缩放、切换、键盘关闭
+// ============================================================
 
+// 导入 React Hooks
+import { useRef, useEffect, useCallback } from "react";
+// 导入 createPortal：将组件渲染到 DOM 的不同位置
+import { createPortal } from "react-dom";
+
+// ============================================================
+// 定义 Props 类型
+// ============================================================
 interface ImageModalProps {
-  src: string | null;
-  onClose: () => void;
+  images: string[];                    // 图片列表
+  index: number;                       // 当前显示第几张
+  onChange: (index: number) => void;   // 切换图片
+  onClose: () => void;                 // 关闭弹窗
 }
 
-const ImageModal = ({ src, onClose }: ImageModalProps) => {
+// ============================================================
+// 主组件
+// ============================================================
+const ImageModal = ({
+  images,
+  index,
+  onChange,
+  onClose
+}: ImageModalProps) => {
+  // 引用图片 DOM，用于缩放操作
   const imgRef = useRef<HTMLImageElement>(null);
+  // 存储当前缩放比例，默认 1 = 100%
   const scaleRef = useRef(1);
-  const translateRef = useRef({ x: 0, y: 0 });
 
-  const dragState = useRef({
-    isDragging: false,
-    startX: 0,
-    startY: 0,
-    lastX: 0,
-    lastY: 0,
-  });
-
-  const pinchState = useRef({
-    startDist: 0,
-    startScale: 1,
-  });
-
-  const updateTransform = useCallback(() => {
-    if (imgRef.current) {
-      imgRef.current.style.transform = `scale(${scaleRef.current}) translate(${translateRef.current.x}px, ${translateRef.current.y}px)`;
-    }
-  }, []);
-
+  // 重置缩放为原始大小
   const resetTransform = useCallback(() => {
     scaleRef.current = 1;
-    translateRef.current = { x: 0, y: 0 };
-    updateTransform();
-  }, [updateTransform]);
-
-  // 打开时重置
-  useEffect(() => {
-    if (src) {
-      resetTransform();
-      document.body.style.overflow = "hidden";
-    } else {
-      document.body.style.overflow = "";
+    if (imgRef.current) {
+      imgRef.current.style.transform = "scale(1)";
     }
-    return () => {
-      document.body.style.overflow = "";
-    };
-  }, [src, resetTransform]);
+  }, []);
 
-  // ESC 关闭
+  // 切换图片时重置缩放
   useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
+    resetTransform();
+  }, [index, resetTransform]);
+
+  // 禁止页面滚动
+  useEffect(() => {
+    const oldOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = oldOverflow;
     };
-    document.addEventListener("keydown", handleKeyDown);
-    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, []);
+
+  // ESC 键关闭
+  useEffect(() => {
+    const key = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        onClose();
+      }
+    };
+    window.addEventListener("keydown", key);
+    return () => {
+      window.removeEventListener("keydown", key);
+    };
   }, [onClose]);
 
-  const handleWheel = useCallback(
-    (e: React.WheelEvent) => {
-      e.preventDefault();
-      const delta = e.deltaY > 0 ? 0.9 : 1.1;
-      scaleRef.current = Math.min(Math.max(scaleRef.current * delta, 0.5), 4);
-      updateTransform();
-    },
-    [updateTransform]
-  );
-
-  const handleMouseDown = useCallback((e: React.MouseEvent) => {
-    if (scaleRef.current <= 1) return;
-    dragState.current = {
-      isDragging: true,
-      startX: e.clientX,
-      startY: e.clientY,
-      lastX: translateRef.current.x,
-      lastY: translateRef.current.y,
-    };
+  // 滚轮缩放：滚轮向上放大，向下缩小
+  const handleWheel = (e: React.WheelEvent) => {
     e.preventDefault();
-  }, []);
-
-  const handleMouseMove = useCallback(
-    (e: React.MouseEvent) => {
-      if (!dragState.current.isDragging) return;
-      const dx = e.clientX - dragState.current.startX;
-      const dy = e.clientY - dragState.current.startY;
-      translateRef.current = {
-        x: dragState.current.lastX + dx,
-        y: dragState.current.lastY + dy,
-      };
-      updateTransform();
-    },
-    [updateTransform]
-  );
-
-  const handleMouseUp = useCallback(() => {
-    dragState.current.isDragging = false;
-  }, []);
-
-  const handleTouchStart = useCallback((e: React.TouchEvent) => {
-    const touches = e.touches;
-    if (touches.length === 1) {
-      if (scaleRef.current > 1) {
-        dragState.current = {
-          isDragging: true,
-          startX: touches[0].clientX,
-          startY: touches[0].clientY,
-          lastX: translateRef.current.x,
-          lastY: translateRef.current.y,
-        };
-      }
-    } else if (touches.length === 2) {
-      const dx = touches[0].clientX - touches[1].clientX;
-      const dy = touches[0].clientY - touches[1].clientY;
-      pinchState.current = {
-        startDist: Math.sqrt(dx * dx + dy * dy),
-        startScale: scaleRef.current,
-      };
+    // 向下滚缩小 (0.9)，向上滚放大 (1.1)
+    const delta = e.deltaY > 0 ? 0.9 : 1.1;
+    // 限制缩放范围 0.5 ~ 4 倍
+    scaleRef.current = Math.min(Math.max(scaleRef.current * delta, 0.5), 4);
+    if (imgRef.current) {
+      imgRef.current.style.transform = `scale(${scaleRef.current})`;
     }
-  }, []);
+  };
 
-  const handleTouchMove = useCallback(
-    (e: React.TouchEvent) => {
-      const touches = e.touches;
-      if (touches.length === 1 && dragState.current.isDragging) {
-        const dx = touches[0].clientX - dragState.current.startX;
-        const dy = touches[0].clientY - dragState.current.startY;
-        translateRef.current = {
-          x: dragState.current.lastX + dx,
-          y: dragState.current.lastY + dy,
-        };
-        updateTransform();
-      } else if (touches.length === 2 && pinchState.current.startDist > 0) {
-        const dx = touches[0].clientX - touches[1].clientX;
-        const dy = touches[0].clientY - touches[1].clientY;
-        const dist = Math.sqrt(dx * dx + dy * dy);
-        const newScale =
-          pinchState.current.startScale * (dist / pinchState.current.startDist);
-        scaleRef.current = Math.min(Math.max(newScale, 0.5), 4);
-        updateTransform();
-      }
-    },
-    [updateTransform]
-  );
+  // 没有图片时不渲染
+  if (images.length === 0) return null;
 
-  const handleTouchEnd = useCallback(() => {
-    dragState.current.isDragging = false;
-    pinchState.current.startDist = 0;
-    if (scaleRef.current < 1) {
-      resetTransform();
-    }
-  }, [resetTransform]);
-
-  if (!src) return null;
-
-  return (
-    <div className="image-modal show" onClick={onClose}>
-      <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-        <span className="modal-close-x" onClick={onClose}>
+  // 使用 Portal 渲染到 body
+  return createPortal(
+    // ===== 黑色背景层 =====
+    // 点击背景关闭弹窗
+    <div
+      className="image-modal"
+      onClick={onClose}
+      style={{
+        position: "fixed",
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        width: "100vw",
+        height: "100vh",
+        background: "rgba(0, 0, 0, 0.9)",
+        zIndex: 99999,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+      }}
+    >
+      {/* ===== 内容层 ===== */}
+      {/* 阻止点击冒泡，防止点击内容时关闭 */}
+      <div
+        className="modal-content"
+        onClick={(e) => e.stopPropagation()}
+        style={{
+          width: "100vw",
+          height: "100vh",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          position: "relative",
+        }}
+      >
+        {/* ===== 关闭按钮 ===== */}
+        <button
+          className="modal-close-x"
+          onClick={onClose}
+          style={{
+            position: "absolute",
+            top: "20px",
+            right: "30px",
+            color: "white",
+            fontSize: "36px",
+            background: "rgba(0,0,0,0.5)",
+            border: "1px solid rgba(255,255,255,0.2)",
+            borderRadius: "50%",
+            width: "50px",
+            height: "50px",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            cursor: "pointer",
+            zIndex: 30,
+            transition: "all 0.3s ease",
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.background = "rgba(255,255,255,0.2)";
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.background = "rgba(0,0,0,0.5)";
+          }}
+        >
           ✕
-        </span>
-        <div className="modal-image-wrapper">
-          <img
-            ref={imgRef}
-            src={src}
-            alt="预览"
-            onWheel={handleWheel}
-            onMouseDown={handleMouseDown}
-            onMouseMove={handleMouseMove}
-            onMouseUp={handleMouseUp}
-            onMouseLeave={handleMouseUp}
-            onTouchStart={handleTouchStart}
-            onTouchMove={handleTouchMove}
-            onTouchEnd={handleTouchEnd}
-          />
-        </div>
+        </button>
+
+        {/* ===== 左箭头 ===== */}
+        <button
+          className="modal-prev"
+          onClick={() => {
+            onChange(index === 0 ? images.length - 1 : index - 1);
+          }}
+          style={{
+            position: "absolute",
+            left: "30px",
+            top: "50%",
+            transform: "translateY(-50%)",
+            color: "white",
+            fontSize: "50px",
+            background: "rgba(0,0,0,0.3)",
+            border: "none",
+            borderRadius: "50%",
+            width: "60px",
+            height: "60px",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            cursor: "pointer",
+            zIndex: 20,
+            transition: "all 0.3s ease",
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.background = "rgba(255,255,255,0.2)";
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.background = "rgba(0,0,0,0.3)";
+          }}
+        >
+          ‹
+        </button>
+
+        {/* ===== 图片 ===== */}
+        <img
+          ref={imgRef}
+          className="modal-image"
+          src={images[index]}
+          alt="preview"
+          onWheel={handleWheel}
+          style={{
+            maxWidth: "90vw",
+            maxHeight: "90vh",
+            objectFit: "contain",
+            transform: `scale(${scaleRef.current})`,
+            borderRadius: "8px",
+            cursor: "grab",
+            transition: "transform 0.1s ease",
+            userSelect: "none",
+            WebkitUserSelect: "none",
+          }}
+          onMouseDown={(e) => {
+            e.currentTarget.style.cursor = "grabbing";
+          }}
+          onMouseUp={(e) => {
+            e.currentTarget.style.cursor = "grab";
+          }}
+        />
+
+        {/* ===== 右箭头 ===== */}
+        <button
+          className="modal-next"
+          onClick={() => {
+            onChange(index === images.length - 1 ? 0 : index + 1);
+          }}
+          style={{
+            position: "absolute",
+            right: "30px",
+            top: "50%",
+            transform: "translateY(-50%)",
+            color: "white",
+            fontSize: "50px",
+            background: "rgba(0,0,0,0.3)",
+            border: "none",
+            borderRadius: "50%",
+            width: "60px",
+            height: "60px",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            cursor: "pointer",
+            zIndex: 20,
+            transition: "all 0.3s ease",
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.background = "rgba(255,255,255,0.2)";
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.background = "rgba(0,0,0,0.3)";
+          }}
+        >
+          ›
+        </button>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 };
 
